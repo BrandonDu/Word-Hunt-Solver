@@ -1,3 +1,4 @@
+package src;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -6,6 +7,8 @@ import java.util.PriorityQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.UIManager;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.BufferedReader;
@@ -58,6 +61,12 @@ public class Solver {
 
 		findAllWords();
 
+		try { 
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 		frame = new JFrame();
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -69,7 +78,7 @@ public class Solver {
 	}
 
 	public void getAllWords() {
-		File dict = new File("Dictionary.txt");
+		File dict = new File("src/Dictionary.txt");
 		try (BufferedReader br = new BufferedReader(new FileReader(dict))) {
 			String line;
 			while ((line = br.readLine()) != null) {

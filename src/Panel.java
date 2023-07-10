@@ -1,3 +1,5 @@
+package src;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -10,6 +12,7 @@ import java.awt.event.ActionListener;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -17,16 +20,21 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
+
 
 public class Panel extends JPanel {
 	private Word word;
 	private JPanel panel;
 	private JLabel wordLabel;
 	private int boardSize;
+	private boolean clearPanelFlag;
 
 	Panel(char[][] board, PriorityQueue<Word> wordList) {
 		word = wordList.poll();
 		boardSize = board.length;
+		clearPanelFlag = false;
+
 		this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 		wordLabel = new JLabel(word.getWord(), SwingConstants.CENTER);
 		wordLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
@@ -36,12 +44,18 @@ public class Panel extends JPanel {
 
 		panel = new JPanel() {
 			public void paintComponent(Graphics g) {
-				String s = word.getWord();
-				ArrayList<int[]> path = word.getPath();
-				for (int i = 0; i < s.length() - 1; i++) {
-					int[] loc1 = findCenter(path.get(i));
-					int[] loc2 = findCenter(path.get(i + 1));
-					drawArrowLine(g, loc1[0], loc1[1], loc2[0], loc2[1], 25, 10);
+				if (clearPanelFlag) {
+					g.setColor(getBackground());
+					g.fillRect(0, 0, getWidth(), getHeight());
+					clearPanelFlag = false;
+				} else {
+					String s = word.getWord();
+					ArrayList<int[]> path = word.getPath();
+					for (int i = 0; i < s.length() - 1; i++) {
+						int[] loc1 = findCenter(path.get(i));
+						int[] loc2 = findCenter(path.get(i + 1));
+						drawArrowLine(g, loc1[0], loc1[1], loc2[0], loc2[1], 15, 5);
+					}
 				}
 			}
 		};
@@ -52,16 +66,16 @@ public class Panel extends JPanel {
 			for (int j = 0; j < boardSize; j++) {
 				JLabel letter = new JLabel(Character.toString(board[i][j]), SwingConstants.CENTER);
 				letter.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-				letter.setFont(new Font("Serif", Font.BOLD, 50));
+				letter.setFont(new Font("Serif", Font.BOLD, 35));
 				letter.setBackground(new Color(248, 223, 161));
 				letter.setOpaque(false);
 				panel.add(letter);
 			}
 		}
-		this.add(panel);	
+		this.add(panel);
 
 		JPanel info = new JPanel();
-		info.setLayout(new GridLayout(1, 2));
+		info.setLayout(new GridLayout(1, 3));
 
 		JLabel wordsRemaining = new JLabel("Words remaining: " + wordList.size(), SwingConstants.CENTER);
 		wordsRemaining.setAlignmentX(JLabel.CENTER_ALIGNMENT);
@@ -84,7 +98,39 @@ public class Panel extends JPanel {
 			}
 
 		});
+
+		JButton animate = new JButton("Animate Path");
+		animate.setAlignmentX(JButton.CENTER_ALIGNMENT);
+		animate.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				clearPanelFlag = true;
+				panel.repaint();
+				String s = word.getWord();
+				ArrayList<int[]> path = word.getPath();
+				int delay = 500; 
+        		AtomicInteger index = new AtomicInteger(0);
+				Timer timer = new Timer(delay, new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent evt) {
+						int[] loc1 = findCenter(path.get(index.get()));
+						int[] loc2 = findCenter(path.get(index.get() + 1));
+						drawArrowLine(panel.getGraphics(), loc1[0], loc1[1], loc2[0], loc2[1], 15, 5);
+						index.incrementAndGet();
+
+						if (index.get() >= s.length() - 1) {
+							((Timer) evt.getSource()).stop();
+						}
+					}
+				});
+				timer.start();
+			}
+
+		});
+
+		
 		info.add(next);
+		info.add(animate);
 		info.add(wordsRemaining);
 		this.add(info);
 	}
@@ -118,7 +164,7 @@ public class Panel extends JPanel {
 
 		g.setColor(Color.RED);
 		Graphics2D g2 = (Graphics2D) g;
-		g2.setStroke(new BasicStroke(1));
+		g2.setStroke(new BasicStroke(2));
 		g2.draw(new Line2D.Float(x1, y1, x2, y2));
 		g.fillPolygon(xpoints, ypoints, 3);
 	}
